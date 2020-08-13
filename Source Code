@@ -14,10 +14,6 @@ struct Weather {
     int low;
     double precip;
     string event;
-
-    void print() {
-        cout << date << high << avg << low << precip << event;
-    }
 };
 
 //function prototypes
