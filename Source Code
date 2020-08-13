@@ -1,0 +1,365 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <iomanip>
+#include <vector>
+
+using namespace std;
+//create a struct called Weather
+struct Weather {
+    int month;
+    int date;
+    int high;
+    int avg;
+    int low;
+    double precip;
+    string event;
+
+    void print() {
+        cout << date << high << avg << low << precip << event;
+    }
+};
+
+//function prototypes
+int loadData(ifstream& file, Weather days[1000]);
+void printData(Weather days[1000], int count);
+
+void print(vector<Weather>); //print a specific number of Weather struct.
+
+void search(Weather days[1000], int count);
+int skipToMonth(Weather days[1000]); //return the line of the first day of the month which user is looking for.
+
+void sort(Weather days[1000], int count);
+
+int main() {
+
+    // declare variables
+    Weather days[1000];
+    ifstream inFile;
+    string checker, path;
+
+    char choice;
+    int count = 0;
+    cout << "Welcome to weather analyzer!" << endl;
+    cout << "Would you like to (l)oad data, (p)rint data, (s)earch data, (o)rder the data, or (q)uit?";
+    cin >> choice;
+    do {
+        choice = tolower(choice);
+        switch (choice)
+        {
+        case 'l':
+            cout << "Please enter the file path: ";
+            cin >> path;
+            inFile.open(path);
+            while (!inFile) {
+                cout << "File does not exist. Please enter another path: ";
+                cin >> path;
+                inFile.open(path);
+            }
+            count = loadData(inFile, days);
+            cout << count << " records loaded." << endl;
+            break;
+        case 'p':
+            cout << "Printing data..." << endl;
+            printData(days, count);
+            break;
+        case 's':
+            search(days, count);
+            break;
+        case 'o':
+            sort(days, count);
+            break;
+        default:
+            cout << "Invalid input. Please try again." << endl;
+            break;
+        }
+        cout << "Would you like to (l)oad data, (p)rint data, (s)earch data, (o)rder the data, or (q)uit?";
+        cin >> choice;
+        system("cls");
+    } while (choice != 'q');
+
+    inFile.close();
+    cout << "\nThanks for using the weather analyzer!!!\n";
+}
+
+//loading function
+int loadData(ifstream& inFile, Weather days[1000]) {
+    string checker;
+    int month = 0;
+    int i; //i varaiable keeps track of how many lines there are for the print function
+    for (i = 0; !inFile.eof(); i++) {
+        inFile >> days[i].date; // gets date and checks if it is 2017 with if loop
+        if (days[i].date == 2017) {
+            getline(inFile, checker);
+            getline(inFile, checker);
+            inFile >> days[i].date; //gets correct date value
+            month++;//increments month counter
+        }
+        days[i].month = month;//gets and stores data from file into days
+        inFile >> days[i].high
+            >> days[i].avg
+            >> days[i].low
+            >> days[i].precip;
+        getline(inFile, days[i].event);
+    }
+    return i - 1; //returns amount of days 
+}
+
+// printing function
+void printData(Weather days[1000], int count) {
+    cout << left << setw(7) << "Month"
+        << setw(7) << "Date" << " "
+        << setw(7) << "High " << " "
+        << setw(7) << "Avg" << " "
+        << setw(7) << "Low" << " "
+        << setw(8) << "Precip" << " "
+        << setw(7) << "Event" << " " << endl;
+    for (int i = 0; i < count; i++) {
+        cout << left << setw(7) << days[i].month
+            << setw(7) << days[i].date << " "
+            << setw(7) << days[i].high << " "
+            << setw(7) << days[i].avg << " "
+            << setw(7) << days[i].low << " "
+            << setw(7) << days[i].precip << " "
+            << setw(7) << days[i].event << " ";
+        cout << endl;
+    }
+}
+
+//Prints a specific line of data.
+void print(vector<Weather> arr) {
+    cout << left  << setw(7) << "Month"
+        << setw(7) << "Date" << " "
+        << setw(7) << "High " << " "
+        << setw(7) << "Avg" << " "
+        << setw(7) << "Low" << " "
+        << setw(8) << "Precip" << " "
+        << setw(7) << "Event" << " " << endl;
+    for (Weather w : arr) {
+        cout << left <<  setw (7) << w.month
+            << setw(7) << w.date << " "
+            << setw(7) << w.high << " "
+            << setw(7) << w.avg << " "
+            << setw(7) << w.low << " "
+            << setw(7) << w.precip << " "
+            << setw(7) << w.event << " ";
+        cout << endl;
+    }
+}
+
+void search(Weather days[1000], int count) {
+    vector<Weather> arr;
+    char input;
+    cout << "Would you like to search by (d)ate, temperature (h)igh, (a)vg, (l)ow, (p)recipitation, or (e)vents?";
+    cin >> input;
+    input = tolower(input);
+
+    if (input != 'd' && input != 'h' && input != 'a' && input != 'l' && input != 'p' && input != 'e') {
+        cout << "Invalid input. Please try again." << endl;
+        return;
+    }
+
+    if (input == 'd') {
+        int skip = skipToMonth(days);
+        if (skip == -1) {
+            cout << "Invalid input. Please try again." << endl;
+            return;
+        }
+        arr.push_back(days[skip]);
+        print(arr);
+        return;
+    }
+
+    if (input == 'e') {
+        cout << "What event would you like to search for?";
+        string event;
+        cin.ignore(100, '\n');
+        getline(cin, event);
+        for (int t = 0; t < count; t++) {
+            string search = days[t].event;
+            if (search.find(event) != string::npos) 
+                arr.push_back(days[t]);
+        }
+        if (arr.size() == 0) {
+            cout << "No such event appears in the list. Please try again." << endl;
+            return;
+        }
+        print(arr);
+        return;
+    }
+
+    int i;
+    cout << "Enter the temperature you are searching: ";
+    if (input == 'p') {
+        double temp;
+        cin >> temp;
+        for (i = 0; i < count - 1; i++) {
+            if (days[i].precip == temp)
+                arr.push_back(days[i]);
+        }
+        if (arr.size() == 0) {
+            cout << "No such temperature appears in the list.Please try again." << endl;
+            return;
+        }
+        print(arr);
+    } else {
+        int temp;
+        cin >> temp;
+        for (i = 0; i < count - 1; i++) {
+            if (input == 'h') {
+                if (days[i].high == temp)
+                    arr.push_back(days[i]);
+            }
+
+            if (input == 'a') {
+                if (days[i].avg == temp)
+                    arr.push_back(days[i]);
+            }
+            if (input == 'l') {
+                if (days[i].low == temp)
+                    arr.push_back(days[i]);
+            }
+        }
+        if (arr.size() == 0) {
+            cout << "No such temperature appears in the list." << endl;
+            return;
+        }
+        print(arr);
+    }
+}
+
+void sort(Weather days[1000], int count) {
+    char order;
+    Weather ref;
+    cout << "Would you like to sort by (d)ate, temperature (h)igh, (a)vg, (l)ow, (p)recipitation, or (e)vents?";
+    cin >> order;
+    bool flag;
+    switch (order)
+    {
+    case 'd':
+        do {
+            flag = false;
+            for (int i = 0; i < count - 1; i++) {
+                if (days[i].date > days[i + 1].date) {
+                    ref = days[i];
+                    days[i] = days[i + 1];
+                    days[i + 1] = ref;
+                    flag = true;
+                }
+            }
+        } while (flag);
+        break;
+    case 'h':
+        do {
+            flag = false;
+            for (int i = 0; i < count - 1; i++) {
+                if (days[i].high > days[i + 1].high) {
+                    ref = days[i];
+                    days[i] = days[i + 1];
+                    days[i + 1] = ref;
+                    flag = true;
+                }
+            }
+        } while (flag);
+        break;
+    case 'a':
+        do {
+            flag = false;
+            for (int i = 0; i < count - 1; i++) {
+                if (days[i].avg > days[i + 1].avg) {
+                    ref = days[i];
+                    days[i] = days[i + 1];
+                    days[i + 1] = ref;
+                    flag = true;
+                }
+            }
+        } while (flag);
+        break;
+    case 'l':
+        do {
+            flag = false;
+            for (int i = 0; i < count - 1; i++) {
+                if (days[i].low > days[i + 1].low) {
+                    ref = days[i];
+                    days[i] = days[i + 1];
+                    days[i + 1] = ref;
+                    flag = true;
+                }
+            }
+        } while (flag);
+        break;
+    case 'p':
+        do {
+            flag = false;
+            for (int i = 0; i < count - 1; i++) {
+                if (days[i].precip > days[i + 1].precip) {
+                    ref = days[i];
+                    days[i] = days[i + 1];
+                    days[i + 1] = ref;
+                    flag = true;
+                }
+            }
+        } while (flag);
+        break;
+    case 'e':
+        do {
+            flag = false;
+            for (int i = 0; i < count - 1; i++) {
+                string event1 = days[i].event;
+                string event2 = days[i + 1].event;
+                /*
+                    Some event string start with " " ", while other do not.
+                    The " " " will make the result incorrect since we need to
+                    compare events' alphabet characters with others.
+                    Therefore use of the two if statements below is to eliminate
+                    the uncessary " " ".
+                */
+                if (event1.find("\"") != string::npos) {
+                    event1 = event1.substr(1);
+                }
+                if (event2.find("\"") != string::npos) {
+                    event2 = event2.substr(1);
+                }
+                if (event1 > event2) {
+                    ref = days[i];
+                    days[i] = days[i + 1];
+                    days[i + 1] = ref;
+                    flag = true;
+                }
+            }
+        } while (flag);
+        break;
+    default:
+        cout << "Invalid input. Please try again.";
+        cin >> order;
+        break;
+    }
+    cout << "Done sorting!" << endl;
+}
+
+//This function will find the specific month which user are looking for.
+int skipToMonth(Weather days[1000]) {
+    int daysInMonth[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    int jump = 0;
+    cout << "What are the month and day of the record you'd like to see?";
+    int m, d;
+    cin >> m >> d;
+
+    if (m < 1 || m >= 12) {
+        return -1;
+    }
+
+    if (daysInMonth[m - 1] - d < 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < m - 1; i++) {
+        jump += daysInMonth[i];
+    }
+
+    while (days[jump].date != d) {
+        jump++;
+    }
+
+    return jump;
+}
